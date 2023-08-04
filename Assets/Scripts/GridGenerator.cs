@@ -1,36 +1,35 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Net.Mime;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UI;
+using UnityEngine.Serialization;
+
 public class GridGenerator : MonoBehaviour
 {
 
-    [SerializeField] private RectTransform Content;
-    
-    private List<GameObject> GeneratedObjects = new List<GameObject>();
-    private Vector2 ContentSize;
+    [SerializeField] private RectTransform content;
+    private List<GameObject> generatedObjects = new List<GameObject>();
+    private Vector2 contentSize;
     public GridCell GridPrefab;
+    public UnityAction OnNewGridRequest;
     
-    private int InitialGridSize = 3;
+    private  int InitialGridSize = 3;
 
     private void Start()
     {
-       // GenerateGridCells(InitialGridSize);
+        GenerateGridCells(InitialGridSize);
     }
 
     private void GetContentSize()
     {
-        ContentSize = Content.sizeDelta;
+        contentSize = content.sizeDelta;
     }
     
 
     public void GenerateGridCells(int i)
     {
         GetContentSize();
-        GeneratedObjects.Clear();
+        OnNewGridRequest?.Invoke();
+        generatedObjects.Clear();
         
         List<RowContainer> Rows = new List<RowContainer>();
         
@@ -43,11 +42,43 @@ public class GridGenerator : MonoBehaviour
             for (int colon = 0; colon < i; colon++)
             {
                 
-                GridCell created = Instantiate(GridPrefab ,Content.transform);
+                GridCell created = Instantiate(GridPrefab ,content.transform);
                 
                 created.Initilaize(GridCellLengt,GetGridPositionByGridSize(row  , colon , GridCellLengt),this);
                 NewRow.GridCells.Add(created);
+                AddNeigbours(created,row,colon);
 
+            }
+        }
+        
+        
+        void AddNeigbours(GridCell _gridCell,int _row,int _colonum)
+        {
+            GridCell gridCell1 = null;
+            if (_row > 0)
+            {
+                gridCell1 = Rows[_row - 1].GridCells[_colonum];
+                _gridCell.AddNeigbour(gridCell1);
+                gridCell1.AddNeigbour(_gridCell);
+                
+            }
+            if (_row < Rows.Count - 1)
+            {
+                gridCell1 = Rows[_row + 1].GridCells[_colonum];
+                _gridCell.AddNeigbour(gridCell1);
+                gridCell1.AddNeigbour(_gridCell);
+            }
+            if (_colonum > 0)
+            {
+                gridCell1 = Rows[_row].GridCells[_colonum - 1];
+                _gridCell.AddNeigbour(gridCell1);
+                gridCell1.AddNeigbour(_gridCell);
+            }
+            if (_colonum < Rows[_row].GridCells.Count - 1)
+            {
+                gridCell1 = Rows[_row].GridCells[_colonum + 1];
+                _gridCell.AddNeigbour(gridCell1);
+                gridCell1.AddNeigbour(_gridCell);
             }
         }
         
@@ -56,7 +87,7 @@ public class GridGenerator : MonoBehaviour
 
     float GetGridCellLengt(int _sended)
     {
-        return ContentSize.x / _sended;
+        return contentSize.x / _sended;
     }
     Vector2 GetGridPositionByGridSize(int row,int colonum,float gridCellSideLengt)
     {
